@@ -1,3 +1,6 @@
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+
 $runtime = Measure-Command{
 
 Write-Host ('Starting NurseOne Script')
@@ -5,6 +8,14 @@ Write-Host ('Starting NurseOne Script')
 $ErrorActionPreference = "silentlycontinue"
 
 $Comp = Get-CimInstance -Class Win32_ComputerSystem | Select-Object -Property *
+$IP = (((Get-WmiObject Win32_NetworkAdapterConfiguration | Select-Object -ExpandProperty IPAddress) -like "*.*")[0])
+$OSBuild = ((Get-WMIObject win32_operatingsystem).version)
+$OS = ((Get-WMIObject win32_operatingsystem).caption)
+
+if ((Test-Path -Path ($env:ProgramData+'\NurseOne') -PathType Container) -eq $false) {New-Item -Type Directory -Force -Path ($env:ProgramData+'\NurseOne')}
+
+$Inv = ($env:ProgramData+'\NurseOne\NurseOne_'+ $Comp.Name +'_Inv_'+(get-date -Format 'yyyy-MM-dd')+".json") 
+if ((test-path $Inv) -eq $false) {new-item $Inv -Type file -Force}
 
 write-host ('------------------------------------------') 
 
@@ -12,13 +23,13 @@ write-host ('Hostname: ') -NoNewline
 write-host ($Comp.Name) -ForegroundColor Magenta
 
 write-host ('IP Address: ') -NoNewline
-write-host (((Get-WmiObject Win32_NetworkAdapterConfiguration | Select-Object -ExpandProperty IPAddress) -like "*.*")[0]) -ForegroundColor Magenta
+write-host $IP -ForegroundColor Magenta
 
 write-host ('Operating System: ') -NoNewline
-write-host ((Get-WMIObject win32_operatingsystem).caption) -ForegroundColor Magenta
+write-host $OS -ForegroundColor Magenta
 
 write-host ('OS Build: ') -NoNewline
-write-host ((Get-WMIObject win32_operatingsystem).version) -ForegroundColor Magenta
+write-host $OSBuild -ForegroundColor Magenta
 
 write-host ('------------------------------------------') 
 
@@ -168,6 +179,34 @@ else
 write-host ($Disk.CookedValue.ToString('###.##')+' %') -ForegroundColor Green
 }
 
+
+$InvData = @{
+
+'Hostname' = $Comp.Name;
+'Domain' = $Comp.Domain;
+'IP' = $IP;
+'OS' = $OS;
+'Build' = $OSBuild;
+'PageFile' = $Comp.AutomaticManagedPagefile;
+'HotFix' = $Result.HotFixID;
+'WMI' = $wmi;
+'DISM' = $dism[6];
+'Ldap' = $ldap;
+'ATPPing' = $atping.count;
+'ProcTime' = $proc.CounterSamples.CookedValue;
+'Memory' = $mem.CounterSamples.CookedValue;
+'Disk' = $Disk.CookedValue;
+
+}
+
+ConvertTo-Json $InvData | Out-File $Inv
+
 }
 Write-Host ('Total Script runtime: ') -NoNewline
 write-host ($runtime.TotalSeconds.ToString('##########.##')+' Secs') -ForegroundColor Magenta
+
+}
+else
+{
+Write-Host ('This script has to be run with administrative rights..')
+}
