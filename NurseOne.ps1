@@ -14,6 +14,11 @@ $OS = ((Get-WMIObject win32_operatingsystem).caption)
 
 if ((Test-Path -Path ($env:ProgramData+'\NurseOne') -PathType Container) -eq $false) {New-Item -Type Directory -Force -Path ($env:ProgramData+'\NurseOne')}
 
+if ((Get-ChildItem -Path ($env:ProgramData+'\NurseOne') -Recurse).count -ge 100)
+{
+Get-ChildItem -Path ($env:ProgramData+'\NurseOne') -Recurse | Sort-Object LastWriteTime | Select-Object -First ((Get-ChildItem -Path ($env:ProgramData+'\NurseOne') -Recurse).count -1) | Remove-Item -Force
+}
+
 $Inv = ($env:ProgramData+'\NurseOne\NurseOne_'+ $Comp.Name +'_Inv_'+(get-date -Format 'yyyy-MM-dd')+".json") 
 if ((test-path $Inv) -eq $false) {new-item $Inv -Type file -Force}
 
