@@ -27,6 +27,9 @@ write-host ('------------------------------------------')
 write-host ('Hostname: ') -NoNewline
 write-host ($Comp.Name) -ForegroundColor Magenta
 
+write-host ('Domain: ') -NoNewline
+write-host ($Comp.Domain) -ForegroundColor Magenta
+
 write-host ('IP Address: ') -NoNewline
 write-host $IP -ForegroundColor Magenta
 
@@ -172,7 +175,7 @@ else
 write-host (((($mem.CounterSamples.CookedValue)/1024)/1024).ToString('#####.##')+' MB') -ForegroundColor Green
 }
 
-Write-Host ('% Logical Disk Free Space (in C:): ') -NoNewline
+Write-Host ('% Disk Free Space (in C:): ') -NoNewline
 $disk = Get-Counter -counter "\LogicalDisk(*)\% Free Space"
 $disk = $disk.CounterSamples | ? {$_.InstanceName -eq 'c:'}
 if($Disk.CookedValue -le 20)
