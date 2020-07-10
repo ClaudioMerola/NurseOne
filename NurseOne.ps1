@@ -72,24 +72,22 @@ write-host ('Running.') -ForegroundColor Green
 }
 
 
-$update = Get-HotFix | sort HotFixID,{ [datetime]$_.InstalledOn } -desc | group HotFixID | % { $_.group[0] }
-
-$Result = $Update[0] 
+$Update = Get-HotFix | sort { [datetime]$_.InstalledOn },HotFixID -desc | Select-Object -First 1
 
 Write-Host ('Lastest Hostfix installed: ') -NoNewline
-if ((New-TimeSpan -Start $Result.InstalledOn.ToShortDateString() -End (get-date)).Days -ge 30)
+if ((New-TimeSpan -Start $Update.InstalledOn.ToShortDateString() -End (get-date)).Days -ge 30)
 {
-write-host $Result.HotFixID -NoNewline -ForegroundColor Red
+write-host $Update.HotFixID -NoNewline -ForegroundColor Red
 Write-Host '. Install date: ' -NoNewline
-write-host $Result.InstalledOn.ToShortDateString() -ForegroundColor Red
+write-host $Update.InstalledOn.ToShortDateString() -ForegroundColor Red
 Write-Host ('Remediate Action: Triggering Windows Update..')
 Invoke-Command -ScriptBlock {wuauclt.exe /updatenow}
 }
 else
 {
-write-host $Result.HotFixID -NoNewline -ForegroundColor Green
+write-host $Update.HotFixID -NoNewline -ForegroundColor Green
 Write-Host '. Install date: ' -NoNewline
-write-host $Result.InstalledOn.ToShortDateString() -ForegroundColor Green
+write-host $Update.InstalledOn.ToShortDateString() -ForegroundColor Green
 }
 
 $wmi = Invoke-Command -ScriptBlock {winmgmt -verifyrepository}
